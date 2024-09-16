@@ -1,4 +1,7 @@
-Run the code in node js
+Catalog Problem Solving Hackathon
 
-in node js 
-type - node problem-statement.js
+Ensure that NodeJs is installed
+
+Run the code in node js by Typping
+node problem-statement.js
+in node js terminal
