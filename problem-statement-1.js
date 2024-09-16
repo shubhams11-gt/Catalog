@@ -1,53 +1,58 @@
-function decodeValue(base, value) {
+const baseToDecimal = (value, base) => {
     return parseInt(value, base);
-}
+};
 
-function lagrangeInterpolation(xs, ys, x) {
-    let result = 0.0;
-    const n = xs.length;
+const lagrangeInterpolation = (xValues, yValues) => {
+    const L = (k, x) => {
+        return xValues.reduce((acc, _, m) => {
+            if (m === k) return acc;
+            return acc * (x - xValues[m]) / (xValues[k] - xValues[m]);
+        }, 1);
+    };
 
-    for (let i = 0; i < n; i++) {
-        let term = ys[i];
-        for (let j = 0; j < n; j++) {
-            if (i !== j) {
-                term = term * (x - xs[j]) / (xs[i] - xs[j]);
-            }
-        }
-        result += term;
-    }
-    return result;
-}
+    const P = (x) => {
+        return yValues.reduce((sum, _, k) => {
+            return sum + yValues[k] * L(k, x);
+        }, 0);
+    };
 
-function findPolynomialConstantTerm(inputJson) {
-    const data = JSON.parse(inputJson);
+    return P(0);
+};
+
+const solveSecretSharing = (jsonInput) => {
+    const data = JSON.parse(jsonInput);
     const n = data.keys.n;
     const k = data.keys.k;
-
-    const roots = [];
-
-    // Extract and decode the roots
+   
+    let xValues = [];
+    let yValues = [];
+   
     for (const key in data) {
         if (key === 'keys') continue;
+       
         const base = parseInt(data[key].base);
         const value = data[key].value;
+       
         const x = parseInt(key);
-        const y = decodeValue(base, value);
-        roots.push({ x, y });
+        const y = baseToDecimal(value, base);
+       
+        xValues.push(x);
+        yValues.push(y);
     }
-
-    if (roots.length < k) {
-        throw new Error("Not enough roots provided.");
+   
+    if (xValues.length < k) {
+        throw new Error("Insufficient number of points provided.");
     }
+   
 
-    const xs = roots.map(root => root.x);
-    const ys = roots.map(root => root.y);
-
-    const constantTerm = lagrangeInterpolation(xs, ys, 0);
-    return constantTerm;
-}
+    const secret = lagrangeInterpolation(xValues.slice(0, k), yValues.slice(0, k));
+   
+    return secret;
+};
 
 
-const inputJson = `{
+const jsonInput1 = `
+{
     "keys": {
         "n": 4,
         "k": 3
@@ -68,11 +73,54 @@ const inputJson = `{
         "base": "4",
         "value": "213"
     }
-}`;
-
-try {
-    const constantTerm = findPolynomialConstantTerm(inputJson);
-    console.log(`The constant term of the polynomial is: ${constantTerm}`);
-} catch (error) {
-    console.error(error.message);
 }
+`;
+const jsonInput2 = `
+{
+    "keys": {
+        "n": 9,
+        "k": 6
+    },
+    "1": {
+        "base": "10",
+        "value": "28735619723837"
+    },
+    "2": {
+        "base": "16",
+        "value": "1A228867F0CA"
+    },
+    "3": {
+        "base": "12",
+        "value": "32811A4AA0B7B"
+    },
+    "4": {
+        "base": "11",
+        "value": "917978721331A"
+    },
+    "5": {
+        "base": "16",
+        "value": "1A22886782E1"
+    },
+    "6": {
+        "base": "10",
+        "value": "28735619654702"
+    },
+    "7": {
+        "base": "14",
+        "value": "71AB5070CC4B"
+    },
+    "8": {
+        "base": "9",
+        "value": "122662581541670"
+    },
+    "9": {
+        "base": "8",
+        "value": "642121030037605"
+    }
+}
+`;
+
+const secret1 = solveSecretSharing(jsonInput1);
+const secret2 = solveSecretSharing(jsonInput2);
+console.log(`The constant term 'c' of the polynomial is: ${secret1}`);
+console.log(`The constant term 'c' of the polynomial is: ${secret2}`);
